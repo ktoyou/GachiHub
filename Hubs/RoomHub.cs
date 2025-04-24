@@ -21,19 +21,21 @@ public class RoomHub : Hub
 
     public async Task SendAudioChunk(string roomId, string userId, byte[] audioChunk)
     {
-        var room = _roomService.GetRoomById(roomId);
-        if (room == null)
-        {
-            await Clients.Caller.SendAsync("RoomNotFound", roomId);
-            return;
-        }
+        //var room = _roomService.GetRoomById(roomId);
+        //if (room == null)
+        //{
+            //await Clients.Caller.SendAsync("RoomNotFound", roomId);
+            //return;
+        //}
         
-        var user = _userService.GetUserByConnectionId(userId);
-        if (user == null)
-        {
-            await Clients.Caller.SendAsync("UserNotFound", userId);
-            return;
-        }
+        //var user = _userService.GetUserByConnectionId(userId);
+        //if (user == null)
+        //{
+            //await Clients.Caller.SendAsync("UserNotFound", userId);
+            //return;
+        //}
+        
+        Console.WriteLine(audioChunk.Length);
         
         await Clients.All.SendAsync("ReceiveAudioChunk", userId, audioChunk);
     }
