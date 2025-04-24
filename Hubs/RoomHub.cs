@@ -28,11 +28,25 @@ public class RoomHub : Hub
             return;
         }
         
+        var user = _userService.GetUserByConnectionId(userId);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("UserNotFound", userId);
+            return;
+        }
+        
         await Clients.Others.SendAsync("ReceiveAudioChunk", userId, audioChunk);
     }
 
     public async Task CreateUser(string username)
     {
+        var user = _userService.GetUserByUserName(username);
+        if (user != null)
+        {
+            await Clients.Caller.SendAsync("UserAlreadyExists", username);
+            return;
+        }
+        
         _userService.AddUser(new User()
         {
             UserName = username,
@@ -79,9 +93,16 @@ public class RoomHub : Hub
             return;
         }
         
+        var user = _userService.GetUserByUserName(username);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("UserNotFound", username);
+            return;
+        }
+        
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         await Clients.All.SendAsync("UserJoinedRoom", roomId, Context.ConnectionId);
-        _roomService.AddUserToRoom(roomId, Context.ConnectionId, username);
+        _roomService.AddUserToRoom(roomId, user);
     }
 
     public async Task LeaveRoom(string roomId, string userId)
@@ -93,9 +114,16 @@ public class RoomHub : Hub
             return;
         }
         
+        var user = _userService.GetUserByConnectionId(userId);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("UserNotFound", userId);
+            return;
+        }
+        
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomId);
         await Clients.All.SendAsync("UserLeftRoom", roomId);
-        _roomService.RemoveUserFromRoom(roomId, userId);
+        _roomService.RemoveUserFromRoom(roomId, user);
     }
 
     public async Task SendMessageToRoom(string roomId, string userId, string message)

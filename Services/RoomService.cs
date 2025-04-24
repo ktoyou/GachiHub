@@ -23,33 +23,22 @@ public class RoomService
         return room;
     }
 
-    public bool AddUserToRoom(string roomId, string userId, string username)
+    public bool AddUserToRoom(string roomId, User user)
     {
         var room = GetRoomById(roomId);
         if (room == null) return false;
-        
-        var user = room.Users.FirstOrDefault(u => u.UserName == userId);
 
-        if (user == null)
-        {
-            room.Users.Add(new User()
-            {
-                UserName = username,
-                ConnectionId = userId
-            });
-        }
+        room.Users.Add(user);
 
         return true;
     }
     
-    public bool RemoveUserFromRoom(string roomId, string userId)
+    public bool RemoveUserFromRoom(string roomId, User user)
     {
         var room = GetRoomById(roomId);
         if(room == null) return false;
-
-        var user = room.Users.FirstOrDefault(u => u.ConnectionId == userId);
         
-        return room.Users.Remove(user!);
+        return room.Users.Remove(user);
     }
     
     public void AddRoom(Room room) 
