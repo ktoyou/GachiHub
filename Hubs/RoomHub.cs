@@ -19,25 +19,9 @@ public class RoomHub : Hub
         _userService = userService;
     }
 
-    public async Task SendAudioChunk(string roomId, string userId, byte[] audioChunk)
+    public async Task SendAudioChunk(string base64)
     {
-        //var room = _roomService.GetRoomById(roomId);
-        //if (room == null)
-        //{
-            //await Clients.Caller.SendAsync("RoomNotFound", roomId);
-            //return;
-        //}
-        
-        //var user = _userService.GetUserByConnectionId(userId);
-        //if (user == null)
-        //{
-            //await Clients.Caller.SendAsync("UserNotFound", userId);
-            //return;
-        //}
-        
-        Console.WriteLine(audioChunk.Length);
-        
-        await Clients.All.SendAsync("ReceiveAudioChunk", userId, audioChunk);
+        await Clients.All.SendAsync("ReceiveAudioChunk", base64);
     }
 
     public async Task CreateUser(string username)
