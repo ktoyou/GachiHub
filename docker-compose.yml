@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  gachihub-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gachihub-backend
+    ports:
+      - "5096:5096"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5096
+    networks:
+      - gachihub-network
+    restart: unless-stopped
+
+networks:
+  gachihub-network:
+    driver: bridge
