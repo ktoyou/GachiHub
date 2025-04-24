@@ -15,6 +15,7 @@ builder.Services.AddSwaggerGen(opts =>
 });
 builder.Services.AddControllers();
 builder.Services.AddSingleton<RoomService>();
+builder.Services.AddSingleton<UserService>();
 
 builder.Services.AddSignalR(options =>
 {

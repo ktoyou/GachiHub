@@ -11,12 +11,38 @@ public class RoomHub : Hub
 {
     private readonly RoomService _roomService;
     
-    public RoomHub(RoomService roomService)
+    private readonly UserService _userService;
+    
+    public RoomHub(RoomService roomService, UserService userService)
     {
         _roomService = roomService;
+        _userService = userService;
     }
 
-    public async Task CreateRoom(string name)
+    public async Task SendAudioChunk(string roomId, string userId, byte[] audioChunk)
+    {
+        var room = _roomService.GetRoomById(roomId);
+        if (room == null)
+        {
+            await Clients.Caller.SendAsync("RoomNotFound", roomId);
+            return;
+        }
+        
+        await Clients.Others.SendAsync("ReceiveAudioChunk", userId, audioChunk);
+    }
+
+    public async Task CreateUser(string username)
+    {
+        _userService.AddUser(new User()
+        {
+            UserName = username,
+            ConnectionId = Context.ConnectionId
+        });
+        
+        await Clients.Caller.SendAsync("CreatedUser", username, Context.ConnectionId);
+    }
+    
+    public async Task CreateRoom(string name, string username)
     {
         var existsRoom = _roomService.GetRoomByName(name);
         if (existsRoom != null)
@@ -25,12 +51,20 @@ public class RoomHub : Hub
             return;
         }
         
+        var user = _userService.GetUserByUserName(username);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("UserNotFound", name);
+            return;
+        }
+        
         var room = new Room()
         {
             CreatedAt = DateTime.Now,
             Name = name,
             Id = Guid.NewGuid().ToString(),
-            Users = []
+            Users = [],
+            Owner = user
         };
         
         _roomService.AddRoom(room);
