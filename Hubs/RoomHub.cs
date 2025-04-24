@@ -22,7 +22,7 @@ public class RoomHub : Hub
     public async Task SendAudioChunk(List<byte> chunk)
     {
         Console.WriteLine(chunk.Count);
-        await Clients.All.SendAsync("ReceiveAudioChunk", chunk);
+        await Clients.All.SendAsync("ReceiveAudioChunk", chunk.ToArray());
     }
 
     public async Task CreateUser(string username)
