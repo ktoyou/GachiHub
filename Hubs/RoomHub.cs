@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
+using GachiHubBackend.Models;
 using GachiHubBackend.Services;
 using SignalRSwaggerGen.Attributes;
 
@@ -13,6 +14,20 @@ public class RoomHub : Hub
     public RoomHub(RoomService roomService)
     {
         _roomService = roomService;
+    }
+
+    public async Task CreateRoom(string name)
+    {
+        var room = new Room()
+        {
+            CreatedAt = DateTime.Now,
+            Name = name,
+            Id = Guid.NewGuid().ToString(),
+            UserIds = []
+        };
+        
+        _roomService.AddRoom(room);
+        await JoinRoom(room.Id);
     }
 
     public async Task JoinRoom(string roomId)

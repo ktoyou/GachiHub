@@ -48,4 +48,6 @@ public class RoomService
         
         return room.UserIds.Remove(userId);
     }
+
+    public void AddRoom(Room room) => _rooms.Add(room);
 }
