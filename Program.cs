@@ -1,12 +1,17 @@
 using GachiHubBackend.Hubs;
 using GachiHubBackend.Services;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(opts =>
+{
+    opts.SwaggerDoc("v1", new OpenApiInfo { Title = "GachiHubBackend", Version = "v1" });
+    opts.AddSignalRSwaggerGen();
+});
 builder.Services.AddControllers();
 builder.Services.AddSingleton<RoomService>();
 
@@ -25,6 +30,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.MapHub<RoomHub>("/audio");
+app.MapHub<RoomHub>("/room");
 
 app.Run();

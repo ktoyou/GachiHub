@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 using GachiHubBackend.Services;
+using SignalRSwaggerGen.Attributes;
 
 namespace GachiHubBackend.Hubs;
 
+[SignalRHub]
 public class RoomHub : Hub
 {
     private readonly RoomService _roomService;
