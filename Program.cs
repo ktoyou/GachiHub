@@ -1,4 +1,5 @@
 using GachiHubBackend.Hubs;
+using GachiHubBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+builder.Services.AddSingleton<RoomService>();
 
 builder.Services.AddSignalR(options =>
 {
@@ -23,6 +25,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.MapHub<AudioHub>("/audio");
+app.MapHub<RoomHub>("/audio");
 
 app.Run();
