@@ -11,8 +11,6 @@ public class RoomService
     {
         _rooms = new ConcurrentBag<Room>();
     }
-    
-    public IEnumerable<Room> GetRooms() => _rooms;
 
     public Room CreateRoom(string name, bool hasAudio = true, bool hasMessage = true)
     {
@@ -25,29 +23,44 @@ public class RoomService
         return room;
     }
 
-    public bool AddUserToRoom(string roomId, string userId)
+    public bool AddUserToRoom(string roomId, string userId, string username)
     {
         var room = GetRoomById(roomId);
         if (room == null) return false;
+        
+        var user = room.Users.FirstOrDefault(u => u.UserName == userId);
 
-        if (!room.UserIds.Contains(userId))
+        if (user == null)
         {
-            room.UserIds.Add(userId);
+            room.Users.Add(new User()
+            {
+                UserName = username,
+                ConnectionId = userId
+            });
         }
 
         return true;
     }
     
-    public Room? GetRoomById(string roomId) 
-        => _rooms.FirstOrDefault(x => x.Id == roomId);
-
     public bool RemoveUserFromRoom(string roomId, string userId)
     {
         var room = GetRoomById(roomId);
         if(room == null) return false;
-        
-        return room.UserIds.Remove(userId);
-    }
 
-    public void AddRoom(Room room) => _rooms.Add(room);
+        var user = room.Users.FirstOrDefault(u => u.ConnectionId == userId);
+        
+        return room.Users.Remove(user!);
+    }
+    
+    public void AddRoom(Room room) 
+        => _rooms.Add(room);
+    
+    public Room? GetRoomById(string roomId) 
+        => _rooms.FirstOrDefault(x => x.Id == roomId);
+
+    public Room? GetRoomByName(string name) 
+        => _rooms.FirstOrDefault(x => x.Name == name);
+    
+    public IEnumerable<Room> GetRooms() 
+        => _rooms;
 }
