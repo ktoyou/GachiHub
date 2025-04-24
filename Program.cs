@@ -1,5 +1,6 @@
 using GachiHubBackend.Hubs;
 using GachiHubBackend.Services;
+using Microsoft.AspNetCore.WebSockets;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,18 @@ builder.Services.AddSignalR(options =>
 {
     options.MaximumReceiveMessageSize = 102400; // 100kb
     options.StreamBufferCapacity = 20;
+    options.EnableDetailedErrors = true;
+});
+
+builder.Services.AddCors(opts =>
+{
+    opts.AddDefaultPolicy(b =>
+    {
+        b.WithOrigins("http://localhost:5174")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
 
 var app = builder.Build();
@@ -29,7 +42,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseWebSockets();
 app.MapHub<RoomHub>("/room");
 
 app.Run();
