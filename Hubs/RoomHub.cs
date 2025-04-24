@@ -19,9 +19,10 @@ public class RoomHub : Hub
         _userService = userService;
     }
 
-    public async Task SendAudioChunk(string base64)
+    public async Task SendAudioChunk(List<byte> chunk)
     {
-        await Clients.All.SendAsync("ReceiveAudioChunk", base64);
+        Console.WriteLine(chunk.Count);
+        await Clients.All.SendAsync("ReceiveAudioChunk", chunk);
     }
 
     public async Task CreateUser(string username)
