@@ -82,6 +82,7 @@ public class RoomHub : Hub
         };
         
         _roomService.AddRoom(room);
+        await JoinRoom(room.Id, username);
     }
 
     public async Task JoinRoom(string roomId, string username)
