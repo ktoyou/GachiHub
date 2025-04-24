@@ -19,7 +19,7 @@ builder.Services.AddSingleton<UserService>();
 
 builder.Services.AddSignalR(options =>
 {
-    options.MaximumReceiveMessageSize = 102400; // 100kb
+    options.MaximumReceiveMessageSize = 4194304; // 100kb
     options.StreamBufferCapacity = 20;
     options.EnableDetailedErrors = true;
 });
