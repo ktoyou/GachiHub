@@ -39,7 +39,7 @@ public class RoomHub : Hub
         }
         
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Others.SendAsync("UserJoinedRoom", roomId);
+        await Clients.Others.SendAsync("UserJoinedRoom", roomId, Context.ConnectionId);
         _roomService.AddUserToRoom(roomId, Context.ConnectionId);
     }
 
