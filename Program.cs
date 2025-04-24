@@ -43,6 +43,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseWebSockets();
+app.UseCors();
 app.MapHub<RoomHub>("/room");
 
 app.Run();
