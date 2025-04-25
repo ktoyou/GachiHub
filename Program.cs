@@ -28,10 +28,10 @@ builder.Services.AddCors(opts =>
 {
     opts.AddDefaultPolicy(b =>
     {
-        b.AllowAnyOrigin()
-            .AllowAnyHeader()
+        b.AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials();
+            .AllowCredentials()
+            .SetIsOriginAllowed(_ => true);
     });
 });
 
