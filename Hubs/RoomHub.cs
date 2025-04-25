@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using System.Collections.Concurrent;
-using System.Threading.Channels;
 using GachiHubBackend.Models;
 using GachiHubBackend.Services;
 using SignalRSwaggerGen.Attributes;
@@ -10,137 +8,79 @@ namespace GachiHubBackend.Hubs;
 [SignalRHub]
 public class RoomHub : Hub
 {
-    private readonly RoomService _roomService;
-    
     private readonly UserService _userService;
-    
-    public RoomHub(RoomService roomService, UserService userService)
+
+    public RoomHub(UserService userService)
     {
-        _roomService = roomService;
         _userService = userService;
     }
-
-    public async Task SendAudioChunk(List<byte> chunk)
+    
+    public async Task SendOffer(object offer, string username)
     {
-        Console.WriteLine(chunk.Count);
-        await Clients.All.SendAsync("ReceiveAudioChunk", chunk);
+        await Clients.Others.SendAsync("ReceiveOffer", offer);
+    }
+    
+    public async Task SendAnswer(object answer, string username)
+    {
+        await Clients.Others.SendAsync("ReceiveAnswer", answer);
+    }
+    
+    public async Task SendIceCandidate(object candidate, string username)
+    {
+        await Clients.Others.SendAsync("ReceiveIceCandidate", candidate);
     }
 
-    public async Task StreamAudioChunk(IAsyncEnumerable<byte[]> stream)
+    public async Task CallUser(string username)
     {
-        await foreach (var chunk in stream)
-        {
-            await Clients.All.SendAsync("ReceiveAudioChunk", chunk);
-        }
+        var user = _userService.GetUserByUserName(username);
+        if (user == null) return;
         
+        if(!user.Connected) return;
+        
+        await Clients.Others.SendAsync("ReceiveCall", user);
     }
 
     public async Task CreateUser(string username)
     {
         var user = _userService.GetUserByUserName(username);
-        if (user != null)
-        {
-            await Clients.Caller.SendAsync("UserAlreadyExists", username);
-            return;
-        }
+        if(user != null) return;
         
-        _userService.AddUser(new User()
-        {
-            UserName = username,
-            ConnectionId = Context.ConnectionId
-        });
+        if(string.IsNullOrEmpty(username)) return;
         
-        await Clients.Caller.SendAsync("CreatedUser", username, Context.ConnectionId);
+        var currentUser = _userService.GetUserByConnectionId(Context.ConnectionId);
+        if(currentUser == null) return;
+        
+        currentUser.UserName = username;
+        currentUser.Connected = true;
+        
+        await Clients.Others.SendAsync("CreatedUser", currentUser);
     }
-    
-    public async Task CreateRoom(string name, string username)
+
+    public async Task GetAllUsers()
     {
-        var existsRoom = _roomService.GetRoomByName(name);
-        if (existsRoom != null)
+        await Clients.Caller.SendAsync("Users", _userService.GetUsers());
+    }
+
+    public override Task OnConnectedAsync()
+    {
+        var user = new User
         {
-            await Clients.Caller.SendAsync("RoomAlreadyExists", existsRoom.Name);
-            return;
-        }
-        
-        var user = _userService.GetUserByUserName(username);
-        if (user == null)
-        {
-            await Clients.Caller.SendAsync("UserNotFound", name);
-            return;
-        }
-        
-        var room = new Room()
-        {
-            CreatedAt = DateTime.Now,
-            Name = name,
-            Id = Guid.NewGuid().ToString(),
-            Users = [],
-            Owner = user
+            ConnectionId = Context.ConnectionId,
+            UserName = string.Empty,
+            Connected = false
         };
         
-        _roomService.AddRoom(room);
-        await JoinRoom(room.Id, username);
+        _userService.AddUser(user);
+        return base.OnConnectedAsync();
     }
 
-    public async Task JoinRoom(string roomId, string username)
+    public override Task OnDisconnectedAsync(Exception? exception)
     {
-        var room = _roomService.GetRoomById(roomId);
-        if (room == null)
-        {
-            await Clients.Caller.SendAsync("RoomNotFound", roomId);
-            return;
-        }
+        var user = _userService.GetUserByConnectionId(Context.ConnectionId);
+        if(user == null) return Task.CompletedTask;
         
-        var user = _userService.GetUserByUserName(username);
-        if (user == null)
-        {
-            await Clients.Caller.SendAsync("UserNotFound", username);
-            return;
-        }
+        _userService.RemoveUser(user);
         
-        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.All.SendAsync("UserJoinedRoom", roomId, Context.ConnectionId);
-        _roomService.AddUserToRoom(roomId, user);
-    }
-
-    public async Task LeaveRoom(string roomId, string userId)
-    {
-        var room = _roomService.GetRoomById(roomId);
-        if (room == null)
-        {
-            await Clients.Caller.SendAsync("RoomNotFound", roomId);
-            return;
-        }
-        
-        var user = _userService.GetUserByConnectionId(userId);
-        if (user == null)
-        {
-            await Clients.Caller.SendAsync("UserNotFound", userId);
-            return;
-        }
-        
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomId);
-        await Clients.All.SendAsync("UserLeftRoom", roomId);
-        _roomService.RemoveUserFromRoom(roomId, user);
-    }
-
-    public async Task SendMessageToRoom(string roomId, string userId, string message)
-    {
-        var room = _roomService.GetRoomById(roomId);
-        if (room == null)
-        {
-            await Clients.Caller.SendAsync("RoomNotFound", roomId);
-            return;
-        }
-
-        var user = room!.Users.FirstOrDefault(u => u.ConnectionId == userId);
-        if (user != null)
-        {
-            await Clients.Others.SendAsync("ReceiveMessage", userId, message);   
-        }
-        else
-        {
-            await Clients.Caller.SendAsync("UserIsNotInRoom", userId, roomId);
-        }
+        return base.OnDisconnectedAsync(exception);
     }
 }

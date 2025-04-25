@@ -5,11 +5,11 @@ namespace GachiHubBackend.Services;
 
 public class UserService
 {
-    private readonly ConcurrentBag<User> _users;
+    private readonly List<User> _users;
 
     public UserService()
     {
-        _users = new ConcurrentBag<User>();
+        _users = new List<User>();
     }
     
     public User? GetUserByConnectionId(string connectionId) 
@@ -19,4 +19,8 @@ public class UserService
         => _users.FirstOrDefault(x => x.UserName == userName);
     
     public void AddUser(User user) => _users.Add(user);
+
+    public void RemoveUser(User user) => _users.Remove(user);
+    
+    public IEnumerable<User> GetUsers() => _users;
 }
