@@ -53,7 +53,7 @@ public class RoomHub : Hub
         currentUser.UserName = username;
         currentUser.Connected = true;
         
-        await Clients.All.SendAsync("CreatedUser", currentUser);
+        await Clients.Others.SendAsync("CreatedUser", currentUser);
     }
 
     public async Task GetAllUsers()
