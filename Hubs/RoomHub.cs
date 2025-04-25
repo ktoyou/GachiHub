@@ -15,17 +15,17 @@ public class RoomHub : Hub
         _userService = userService;
     }
     
-    public async Task SendOffer(object offer, string username)
+    public async Task SendOffer(object offer)
     {
         await Clients.Others.SendAsync("ReceiveOffer", offer);
     }
     
-    public async Task SendAnswer(object answer, string username)
+    public async Task SendAnswer(object answer)
     {
         await Clients.Others.SendAsync("ReceiveAnswer", answer);
     }
     
-    public async Task SendIceCandidate(object candidate, string username)
+    public async Task SendIceCandidate(object candidate)
     {
         await Clients.Others.SendAsync("ReceiveIceCandidate", candidate);
     }
@@ -53,7 +53,7 @@ public class RoomHub : Hub
         currentUser.UserName = username;
         currentUser.Connected = true;
         
-        await Clients.Others.SendAsync("CreatedUser", currentUser);
+        await Clients.All.SendAsync("CreatedUser", currentUser);
     }
 
     public async Task GetAllUsers()
