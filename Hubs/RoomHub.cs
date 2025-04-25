@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
+using System.Threading.Channels;
 using GachiHubBackend.Models;
 using GachiHubBackend.Services;
 using SignalRSwaggerGen.Attributes;
@@ -23,6 +24,17 @@ public class RoomHub : Hub
     {
         Console.WriteLine(chunk.Count);
         await Clients.All.SendAsync("ReceiveAudioChunk", chunk);
+    }
+
+    public async Task StreamAudioChunk(ChannelReader<byte[]> stream)
+    {
+        while (await stream.WaitToReadAsync())
+        {
+            while (stream.TryRead(out var item))
+            {
+                await Clients.All.SendAsync("ReceiveAudioChunk", item);
+            }
+        }
     }
 
     public async Task CreateUser(string username)
