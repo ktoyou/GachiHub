@@ -26,15 +26,13 @@ public class RoomHub : Hub
         await Clients.All.SendAsync("ReceiveAudioChunk", chunk);
     }
 
-    public async Task StreamAudioChunk(ChannelReader<byte[]> stream)
+    public async Task StreamAudioChunk(IAsyncEnumerable<byte[]> stream)
     {
-        while (await stream.WaitToReadAsync())
+        await foreach (var chunk in stream)
         {
-            while (stream.TryRead(out var item))
-            {
-                await Clients.All.SendAsync("ReceiveAudioChunk", item);
-            }
+            await Clients.All.SendAsync("ReceiveAudioChunk", chunk);
         }
+        
     }
 
     public async Task CreateUser(string username)
