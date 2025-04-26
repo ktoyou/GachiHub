@@ -36,7 +36,7 @@ public class RoomHub : Hub
         var call = _callService.GetCallById(callId);
         if(call == null) return;
         
-        await Clients.Client(call.To.ConnectionId).SendAsync("ReceiveAnswer", new
+        await Clients.Client(call.From.ConnectionId).SendAsync("ReceiveAnswer", new
         {
             Answer = answer,
             Call = call
