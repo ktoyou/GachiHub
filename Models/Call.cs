@@ -7,4 +7,6 @@ public class Call
     public User From { get; set; } = null!;
 
     public User To { get; set; } = null!;
+
+    public List<Message> Messages { get; set; } = null!;
 }

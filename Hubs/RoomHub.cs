@@ -58,6 +58,28 @@ public class RoomHub : Hub
         });
     }
 
+    public async Task SendMessageToCall(string callId, string message)
+    {
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
+        
+        var sender = _userService.GetUserByConnectionId(Context.ConnectionId);
+        if(sender == null) return;
+        
+        var receiver = sender.ConnectionId == call.From.ConnectionId ? call.To : call.From;
+
+        var msg = new Message()
+        {
+            From = sender,
+            To = receiver,
+            Content = message,
+            Sended = DateTime.Now,
+        };
+        _callService.AddMessageToCall(msg, call);
+
+        await Clients.Client(receiver.ConnectionId).SendAsync("ReceiveMessage", msg);
+    }
+    
     public async Task CallUser(string username)
     {
         var to = _userService.GetUserByUserName(username);
@@ -143,11 +165,11 @@ public class RoomHub : Hub
 
             if (call.From == user)
             {
-                await Clients.Client(call.From.ConnectionId).SendAsync("DeclinedCall", call);
+                await Clients.Client(call.To.ConnectionId).SendAsync("DeclinedCall", call);
             }
             else
             {
-                await Clients.Client(call.To.ConnectionId).SendAsync("DeclinedCall", call);
+                await Clients.Client(call.From.ConnectionId).SendAsync("DeclinedCall", call);
             }
         }
         

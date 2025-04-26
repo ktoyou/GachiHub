@@ -16,12 +16,14 @@ public class CallService
     public void AddCall(Call call) => _calls.Add(call);
     
     public Call? GetCallById(string callId) => _calls.FirstOrDefault(c => c.CallId == callId);
-
+    
+    public List<Call> GetCalls() => _calls;
+    
+    public void AddMessageToCall(Message message, Call call) => call.Messages.Add(message); 
+    
     public Call? GetCallByUserConnectionId(string connectionId)
     {
         var call = _calls.SingleOrDefault(c => c.To.ConnectionId == connectionId || c.From.ConnectionId == connectionId);
         return call;
     }
-    
-    public List<Call> GetCalls() => _calls;
 }
