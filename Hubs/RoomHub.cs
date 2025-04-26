@@ -61,7 +61,7 @@ public class RoomHub : Hub
         await Clients.Caller.SendAsync("Users", _userService.GetUsers());
     }
 
-    public override Task OnConnectedAsync()
+    public override async Task OnConnectedAsync()
     {
         var user = new User
         {
@@ -71,7 +71,7 @@ public class RoomHub : Hub
         };
         
         _userService.AddUser(user);
-        return base.OnConnectedAsync();
+        await base.OnConnectedAsync();
     }
 
     public async override Task OnDisconnectedAsync(Exception? exception)
@@ -80,6 +80,7 @@ public class RoomHub : Hub
         if (user == null) return;
         
         _userService.RemoveUser(user);
+        
         await Clients.All.SendAsync("UserDisconnected", user);
         await base.OnDisconnectedAsync(exception);
     }
