@@ -24,7 +24,7 @@ public class RoomHub : Hub
         var call = _callService.GetCallById(callId);
         if(call == null) return;
         
-        await Clients.Client(call.From.ConnectionId).SendAsync("ReceiveOffer", new
+        await Clients.Client(call.To.ConnectionId).SendAsync("ReceiveOffer", new
         {
             Offer = offer,
             Call = call
@@ -46,9 +46,13 @@ public class RoomHub : Hub
     public async Task SendIceCandidate(object candidate, string callId)
     {
         var call = _callService.GetCallById(callId);
-        if(call == null) return;
-        
-        await Clients.Client(call.From.ConnectionId).SendAsync("ReceiveIceCandidate", new
+        if (call == null) return;
+
+        // Determine who is sending and send to the other participant
+        var senderConnectionId = Context.ConnectionId;
+        var targetConnectionId = senderConnectionId == call.From.ConnectionId ? call.To.ConnectionId : call.From.ConnectionId;
+
+        await Clients.Client(targetConnectionId).SendAsync("ReceiveIceCandidate", new
         {
             Candidate = candidate,
             Call = call
