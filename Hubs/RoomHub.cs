@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using System.Collections.Concurrent;
+using Microsoft.AspNetCore.SignalR;
 using GachiHubBackend.Models;
 using GachiHubBackend.Services;
 using SignalRSwaggerGen.Attributes;
@@ -9,60 +10,48 @@ namespace GachiHubBackend.Hubs;
 public class RoomHub : Hub
 {
     private readonly UserService _userService;
+    
+    private readonly CallService _callService;
 
-    public RoomHub(UserService userService)
+    public RoomHub(UserService userService, CallService callService)
     {
         _userService = userService;
+        _callService = callService;
     }
     
-    public async Task SendOffer(object offer, string username)
+    public async Task SendOffer(object offer, string callId)
     {
-        var to = _userService.GetUserByUserName(username);
-        if (to == null) return;
-        if(!to.Connected) return;
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
         
-        var from = _userService.GetUserByConnectionId(Context.ConnectionId);
-        if(from == null) return;
-        if(!from.Connected) return;
-        
-        await Clients.Client(to.ConnectionId).SendAsync("ReceiveOffer", new
+        await Clients.Client(call.To.ConnectionId).SendAsync("ReceiveOffer", new
         {
             Offer = offer,
-            From = from,
+            Call = call
         });
     }
     
-    public async Task SendAnswer(object answer, string username)
+    public async Task SendAnswer(object answer, string callId)
     {
-        var to = _userService.GetUserByUserName(username);
-        if (to == null) return;
-        if(!to.Connected) return;
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
         
-        var from = _userService.GetUserByConnectionId(Context.ConnectionId);
-        if(from == null) return;
-        if(!from.Connected) return;
-        
-        await Clients.Client(to.ConnectionId).SendAsync("ReceiveAnswer", new
+        await Clients.Client(call.To.ConnectionId).SendAsync("ReceiveAnswer", new
         {
             Answer = answer,
-            From = from,
+            Call = call
         });
     }
     
-    public async Task SendIceCandidate(object candidate, string username)
+    public async Task SendIceCandidate(object candidate, string callId)
     {
-        var to = _userService.GetUserByUserName(username);
-        if (to == null) return;
-        if(!to.Connected) return;
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
         
-        var from = _userService.GetUserByConnectionId(Context.ConnectionId);
-        if(from == null) return;
-        if(!from.Connected) return;
-        
-        await Clients.Client(to.ConnectionId).SendAsync("ReceiveIceCandidate", new
+        await Clients.Client(call.To.ConnectionId).SendAsync("ReceiveIceCandidate", new
         {
             Candidate = candidate,
-            From = from,
+            Call = call
         });
     }
 
@@ -75,12 +64,32 @@ public class RoomHub : Hub
         var from = _userService.GetUserByConnectionId(Context.ConnectionId);
         if(from == null) return;
         if(!from.Connected) return;
-        
-        await Clients.Client(to.ConnectionId).SendAsync("ReceiveCall", new
+
+        var call = new Call()
         {
             From = from,
             To = to,
-        });
+            CallId = Guid.NewGuid().ToString()
+        };
+        _callService.AddCall(call);
+        
+        await Clients.Client(to.ConnectionId).SendAsync("CallingUser", call);
+    }
+
+    public async Task AcceptCall(string callId)
+    {
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
+        
+        await Clients.Client(call.To.ConnectionId).SendAsync("AcceptedCall", call);
+    }
+
+    public async Task DeclineCall(string callId)
+    {
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
+        
+        await Clients.Client(call.To.ConnectionId).SendAsync("DeclinedCall", call);
     }
 
     public async Task CreateUser(string username)
@@ -121,6 +130,14 @@ public class RoomHub : Hub
     {
         var user = _userService.GetUserByConnectionId(Context.ConnectionId);
         if (user == null) return;
+
+        var call = _callService.GetCallByUserConnectionId(Context.ConnectionId);
+        if (call != null)
+        {
+            _callService.RemoveCall(call);
+            await Clients.Client(call.To.ConnectionId).SendAsync("DeclinedCall", call);
+            await Clients.Client(call.From.ConnectionId).SendAsync("DeclinedCall", call);
+        }
         
         _userService.RemoveUser(user);
         
