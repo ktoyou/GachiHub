@@ -21,41 +21,40 @@ public class RoomHub : Hub
     
     public async Task SendOffer(object offer, string callId)
     {
-        //var call = _callService.GetCallById(callId);
-        //if(call == null) return;
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
         
-        await Clients.Others.SendAsync("ReceiveOffer", new
+        await Clients.Client(call.To.ConnectionId).SendAsync("ReceiveOffer", new
         {
             Offer = offer,
-            Call = new {}
+            Call = call
         });
     }
     
     public async Task SendAnswer(object answer, string callId)
     {
-        //var call = _callService.GetCallById(callId);
-        //if(call == null) return;
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
         
-        await Clients.Others.SendAsync("ReceiveAnswer", new
+        await Clients.Client(call.From.ConnectionId).SendAsync("ReceiveAnswer", new
         {
             Answer = answer,
-            Call = new {}
+            Call = call
         });
     }
     
     public async Task SendIceCandidate(object candidate, string callId)
     {
-        //var call = _callService.GetCallById(callId);
-        //if (call == null) return;
+        var call = _callService.GetCallById(callId);
+        if (call == null) return;
+        
+        var senderConnectionId = Context.ConnectionId;
+        var targetConnectionId = senderConnectionId == call.From.ConnectionId ? call.To.ConnectionId : call.From.ConnectionId;
 
-        // Determine who is sending and send to the other participant
-        //var senderConnectionId = Context.ConnectionId;
-        //var targetConnectionId = senderConnectionId == call.From.ConnectionId ? call.To.ConnectionId : call.From.ConnectionId;
-
-        await Clients.Others.SendAsync("ReceiveIceCandidate", new
+        await Clients.Client(targetConnectionId).SendAsync("ReceiveIceCandidate", new
         {
             Candidate = candidate,
-            Call = new{}
+            Call = call
         });
     }
 
@@ -132,7 +131,7 @@ public class RoomHub : Hub
         await base.OnConnectedAsync();
     }
 
-    public async override Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var user = _userService.GetUserByConnectionId(Context.ConnectionId);
         if (user == null) return;
@@ -141,8 +140,15 @@ public class RoomHub : Hub
         if (call != null)
         {
             _callService.RemoveCall(call);
-            await Clients.Client(call.To.ConnectionId).SendAsync("DeclinedCall", call);
-            await Clients.Client(call.From.ConnectionId).SendAsync("DeclinedCall", call);
+
+            if (call.From == user)
+            {
+                await Clients.Client(call.From.ConnectionId).SendAsync("DeclinedCall", call);
+            }
+            else
+            {
+                await Clients.Client(call.To.ConnectionId).SendAsync("DeclinedCall", call);
+            }
         }
         
         _userService.RemoveUser(user);

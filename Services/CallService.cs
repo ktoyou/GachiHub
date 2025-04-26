@@ -22,4 +22,6 @@ public class CallService
         var call = _calls.SingleOrDefault(c => c.To.ConnectionId == connectionId || c.From.ConnectionId == connectionId);
         return call;
     }
+    
+    public List<Call> GetCalls() => _calls;
 }
