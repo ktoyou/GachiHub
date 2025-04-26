@@ -37,6 +37,8 @@ public class RoomHub : Hub
         if(!to.Connected) return;
         
         var from = _userService.GetUserByConnectionId(Context.ConnectionId);
+        if(from == null) return;
+        if(!from.Connected) return;
         
         await Clients.Others.SendAsync("ReceiveCall", new
         {
