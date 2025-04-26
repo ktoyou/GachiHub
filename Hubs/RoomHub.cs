@@ -74,13 +74,13 @@ public class RoomHub : Hub
         return base.OnConnectedAsync();
     }
 
-    public override Task OnDisconnectedAsync(Exception? exception)
+    public async override Task OnDisconnectedAsync(Exception? exception)
     {
         var user = _userService.GetUserByConnectionId(Context.ConnectionId);
-        if(user == null) return Task.CompletedTask;
+        if (user == null) return;
         
         _userService.RemoveUser(user);
-        
-        return base.OnDisconnectedAsync(exception);
+        await Clients.All.SendAsync("UserDisconnected", user);
+        await base.OnDisconnectedAsync(exception);
     }
 }
