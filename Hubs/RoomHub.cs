@@ -15,19 +15,55 @@ public class RoomHub : Hub
         _userService = userService;
     }
     
-    public async Task SendOffer(object offer)
+    public async Task SendOffer(object offer, string username)
     {
-        await Clients.Others.SendAsync("ReceiveOffer", offer);
+        var to = _userService.GetUserByUserName(username);
+        if (to == null) return;
+        if(!to.Connected) return;
+        
+        var from = _userService.GetUserByConnectionId(Context.ConnectionId);
+        if(from == null) return;
+        if(!from.Connected) return;
+        
+        await Clients.Client(to.ConnectionId).SendAsync("ReceiveOffer", new
+        {
+            Offer = offer,
+            From = from,
+        });
     }
     
-    public async Task SendAnswer(object answer)
+    public async Task SendAnswer(object answer, string username)
     {
-        await Clients.Others.SendAsync("ReceiveAnswer", answer);
+        var to = _userService.GetUserByUserName(username);
+        if (to == null) return;
+        if(!to.Connected) return;
+        
+        var from = _userService.GetUserByConnectionId(Context.ConnectionId);
+        if(from == null) return;
+        if(!from.Connected) return;
+        
+        await Clients.Client(to.ConnectionId).SendAsync("ReceiveAnswer", new
+        {
+            Answer = answer,
+            From = from,
+        });
     }
     
-    public async Task SendIceCandidate(object candidate)
+    public async Task SendIceCandidate(object candidate, string username)
     {
-        await Clients.Others.SendAsync("ReceiveIceCandidate", candidate);
+        var to = _userService.GetUserByUserName(username);
+        if (to == null) return;
+        if(!to.Connected) return;
+        
+        var from = _userService.GetUserByConnectionId(Context.ConnectionId);
+        if(from == null) return;
+        if(!from.Connected) return;
+        
+        await Clients.Client(to.ConnectionId).SendAsync("ReceiveIceCandidate", new
+        {
+            Candidate = candidate,
+            From = from,
+        });
     }
 
     public async Task CallUser(string username)
@@ -40,7 +76,7 @@ public class RoomHub : Hub
         if(from == null) return;
         if(!from.Connected) return;
         
-        await Clients.Others.SendAsync("ReceiveCall", new
+        await Clients.Client(to.ConnectionId).SendAsync("ReceiveCall", new
         {
             From = from,
             To = to,
