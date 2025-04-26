@@ -32,12 +32,17 @@ public class RoomHub : Hub
 
     public async Task CallUser(string username)
     {
-        var user = _userService.GetUserByUserName(username);
-        if (user == null) return;
+        var to = _userService.GetUserByUserName(username);
+        if (to == null) return;
+        if(!to.Connected) return;
         
-        if(!user.Connected) return;
+        var from = _userService.GetUserByConnectionId(Context.ConnectionId);
         
-        await Clients.Others.SendAsync("ReceiveCall", user);
+        await Clients.Others.SendAsync("ReceiveCall", new
+        {
+            From = from,
+            To = to,
+        });
     }
 
     public async Task CreateUser(string username)
