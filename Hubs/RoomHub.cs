@@ -81,7 +81,7 @@ public class RoomHub : Hub
         var call = _callService.GetCallById(callId);
         if(call == null) return;
         
-        await Clients.Client(call.To.ConnectionId).SendAsync("AcceptedCall", call);
+        await Clients.Client(call.From.ConnectionId).SendAsync("AcceptedCall", call);
     }
 
     public async Task DeclineCall(string callId)
@@ -91,7 +91,7 @@ public class RoomHub : Hub
         
         _callService.RemoveCall(call);
         
-        await Clients.Client(call.To.ConnectionId).SendAsync("DeclinedCall", call);
+        await Clients.Client(call.From.ConnectionId).SendAsync("DeclinedCall", call);
     }
 
     public async Task CreateUser(string username)
