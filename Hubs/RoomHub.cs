@@ -89,6 +89,8 @@ public class RoomHub : Hub
         var call = _callService.GetCallById(callId);
         if(call == null) return;
         
+        _callService.RemoveCall(call);
+        
         await Clients.Client(call.To.ConnectionId).SendAsync("DeclinedCall", call);
     }
 
