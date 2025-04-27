@@ -47,11 +47,8 @@ public class RoomHub : Hub
     {
         var call = _callService.GetCallById(callId);
         if (call == null) return;
-        
-        var senderConnectionId = Context.ConnectionId;
-        var targetConnectionId = senderConnectionId == call.From.ConnectionId ? call.To.ConnectionId : call.From.ConnectionId;
 
-        await Clients.Client(targetConnectionId).SendAsync("ReceiveIceCandidate", new
+        await Clients.Client(GetTargetConnectionIdByCall(call)).SendAsync("ReceiveIceCandidate", new
         {
             Candidate = candidate,
             Call = call
@@ -94,7 +91,17 @@ public class RoomHub : Hub
         
         _callService.RemoveCall(call);
         
-        await Clients.Client(call.From.ConnectionId).SendAsync("DeclinedCall", call);
+        await Clients.Client(GetTargetConnectionIdByCall(call)).SendAsync("DeclinedCall", call);
+    }
+
+    public async Task EndCall(string callId)
+    {
+        var call = _callService.GetCallById(callId);
+        if(call == null) return;
+        
+        _callService.RemoveCall(call);
+        
+        await Clients.Client(GetTargetConnectionIdByCall(call)).SendAsync("EndedCall", call);
     }
 
     public async Task CreateUser(string username)
@@ -140,7 +147,7 @@ public class RoomHub : Hub
         if (call != null)
         {
             _callService.RemoveCall(call);
-
+            
             if (call.From == user)
             {
                 await Clients.Client(call.From.ConnectionId).SendAsync("DeclinedCall", call);
@@ -156,4 +163,11 @@ public class RoomHub : Hub
         await Clients.All.SendAsync("UserDisconnected", user);
         await base.OnDisconnectedAsync(exception);
     }
+
+    private string GetTargetConnectionIdByCall(Call call)
+    {
+        var senderConnectionId = Context.ConnectionId;
+        var targetConnectionId = senderConnectionId == call.From.ConnectionId ? call.To.ConnectionId : call.From.ConnectionId;
+        return targetConnectionId;
+    } 
 }
