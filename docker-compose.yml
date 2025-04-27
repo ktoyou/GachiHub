@@ -8,12 +8,14 @@ services:
     container_name: gachihub-backend
     ports:
       - "5096:5096"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5096
     networks:
       - gachihub-network
-    restart: unless-stopped
+    volumes:
+      - /etc/ssl/certs:/etc/ssl/certs:ro
+    environment:
+      - ASPNETCORE_URLS=https://+:5096;http://+:5097
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/etc/ssl/certs/fullchain1.pem
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/etc/ssl/certs/privkey1.pem
 
 networks:
   gachihub-network:
